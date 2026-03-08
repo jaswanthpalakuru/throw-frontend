@@ -1,0 +1,51 @@
+@import "tailwindcss";
+
+/* theme is where you register your own values */
+@theme {
+  --color-ink: #0C0C10;
+  --color-ink-2: #16161D;
+  --color-ink-3: #1F1F2A;
+  --color-ink-4: #2A2A38;
+
+  --color-lime: #C8FF00;
+  --color-lime-dark: #9FCC00;
+  --color-cyan: #00E5FF;
+  --color-orange: #FF6B35;
+  --color-purple: #8B5CF6;
+
+  --color-text: #F4F4F8;
+  --color-text-2: rgba(244,244,248,0.55);
+  --color-text-3: rgba(244,244,248,0.28);
+
+  --font-head: 'Syne', sans-serif;
+  --font-body: 'Instrument Sans', sans-serif;
+  --font-mono: 'DM Mono', monospace;
+
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+  --radius-xl: 32px;
+}
+
+:root {
+  --nav-height: 57px;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  background-color: #0C0C10;
+}
+
+body {
+  background-color: var(--color-ink);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.5;
+  overflow-x: hidden;
+}
