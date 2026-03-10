@@ -6,7 +6,9 @@ function ThrowReceive() {
   const [collapsed, setCollapsed] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const joinInputRef = useRef<HTMLInputElement>(null);
-  const { status, roomId, progress, sendFile, joinRoom, createRoom } = useWebRTCContext();
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const { status, roomId, progress, sendFile, joinRoom, createRoom } =
+    useWebRTCContext();
 
   const statusColor: Record<ConnectionStatus, string> = {
     idle: "#888",
@@ -42,8 +44,10 @@ function ThrowReceive() {
 
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
+    console.log("file ------------------------", file);
     if (!file) return;
-    await sendFile(file);
+    setSelectedFile(file);
+    // await sendFile(file);
   }
 
   return (
@@ -468,9 +472,7 @@ function ThrowReceive() {
                 {roomId || "—"}
               </span>
               <button
-                onClick={() =>
-                  roomId && navigator.clipboard.writeText(roomId)
-                }
+                onClick={() => roomId && navigator.clipboard.writeText(roomId)}
                 style={{
                   fontSize: 11,
                   fontFamily: "var(--font-mono)",
@@ -518,40 +520,127 @@ function ThrowReceive() {
             style={{ display: "none" }}
             onChange={handleFileChange}
           />
-          <div
-            style={{
-              width: 80,
-              height: 80,
-              borderRadius: "50%",
-              border: "2px solid rgba(255,255,255,0.15)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: 32,
-              marginBottom: 20,
-              background: "#1F1F2A",
-            }}
-          >
-            📁
-          </div>
-          <div
-            style={{
-              fontFamily: "var(--font-head)",
-              fontSize: 18,
-              fontWeight: 700,
-              marginBottom: 8,
-              letterSpacing: -0.3,
-            }}
-          >
-            {status === "connected"
-              ? "Drop files to throw"
-              : "Connect to a peer first"}
-          </div>
-          <div style={{ fontSize: 13, color: "rgba(244,244,248,0.55)" }}>
-            {status === "connected"
-              ? "or click to browse from your device"
-              : "Enter a peer's room code above and click Connect"}
-          </div>
+          {selectedFile ? (
+            // Show selected file
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: 12,
+              }}
+            >
+              <div
+                style={{
+                  width: 64,
+                  height: 64,
+                  borderRadius: 16,
+                  background: "rgba(200,255,0,0.1)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: 28,
+                }}
+              >
+                📄
+              </div>
+              <div
+                style={{
+                  fontFamily: "var(--font-head)",
+                  fontSize: 16,
+                  fontWeight: 700,
+                }}
+              >
+                {selectedFile.name}
+              </div>
+              <div
+                style={{
+                  fontSize: 12,
+                  fontFamily: "var(--font-mono)",
+                  color: "rgba(244,244,248,0.28)",
+                }}
+              >
+                {(selectedFile.size / (1024 * 1024)).toFixed(2)} MB
+              </div>
+              <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    sendFile(selectedFile);
+                  }}
+                  style={{
+                    padding: "10px 24px",
+                    background: "#C8FF00",
+                    color: "#0C0C10",
+                    borderRadius: 10,
+                    fontFamily: "var(--font-head)",
+                    fontWeight: 700,
+                    fontSize: 13,
+                    border: "none",
+                    cursor: "pointer",
+                  }}
+                >
+                  Throw it →
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedFile(null);
+                    if (fileInputRef.current) fileInputRef.current.value = "";
+                  }}
+                  style={{
+                    padding: "10px 16px",
+                    background: "none",
+                    border: "1px solid rgba(255,255,255,0.15)",
+                    borderRadius: 10,
+                    fontSize: 13,
+                    color: "rgba(244,244,248,0.55)",
+                    cursor: "pointer",
+                  }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          ) : (
+            // Show drop zone prompt
+            <>
+              <div
+                style={{
+                  width: 80,
+                  height: 80,
+                  borderRadius: "50%",
+                  border: "2px solid rgba(255,255,255,0.15)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: 32,
+                  marginBottom: 20,
+                  background: "#1F1F2A",
+                }}
+              >
+                📁
+              </div>
+              <div
+                style={{
+                  fontFamily: "var(--font-head)",
+                  fontSize: 18,
+                  fontWeight: 700,
+                  marginBottom: 8,
+                  letterSpacing: -0.3,
+                }}
+              >
+                {status === "connected"
+                  ? "Drop files to throw"
+                  : "Connect to a peer first"}
+              </div>
+              <div style={{ fontSize: 13, color: "rgba(244,244,248,0.55)" }}>
+                {status === "connected"
+                  ? "or click to browse from your device"
+                  : "Enter a peer's room code above and click Connect"}
+              </div>
+            </>
+          )}
 
           {/* Progress bar */}
           {progress && (
