@@ -1,7 +1,7 @@
 import { Outlet } from "react-router-dom";
 import Navbar from "../components/NavBar";
 import { useWebRTC } from "../customHooks/useWebRTC";
-import { createContext, useContext } from "react";
+import { createContext } from "react";
 import type { ConnectionStatus, TransferProgress } from "../utils/types";
 
 interface WebRTCContextType {
