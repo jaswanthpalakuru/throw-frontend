@@ -261,44 +261,61 @@ export function useWebRTC() {
   }, [])
 
   async function sendFile(_file: File) {
-    // Task 10
     const dc = dcRef.current;
-    if(dc?.readyState !== "open") {
-        // throw new Error("Data channel not found");
-        console.log('errir -------- dc not found');
+    if (dc?.readyState !== "open") {
+        console.log('error -------- dc not found');
         return;
     }
-    dc.send(JSON.stringify({"name": _file.name, "size": _file.size, "type": _file.type}));
 
-    const buffer = await _file.arrayBuffer();
+    const CHUNK_SIZE = 16 * 1024;   // 16KB — safe for WebRTC
+    const MAX_BUFFER = 256 * 1024;  // pause sending if buffered > 256KB
 
-    let offset = 0;
-    const MAX_BUFFER = 256 * 1024;
+    // Send metadata first
+    dc.send(JSON.stringify({ name: _file.name, size: _file.size, type: _file.type }));
 
-    while(offset < buffer.byteLength) {
-        if (dc.bufferedAmount > MAX_BUFFER) {
-            await new Promise<void>(resolve => {
-                dc.bufferedAmountLowThreshold = 64 * 1024 // resume when below 64KB
-                dc.onbufferedamountlow = () => resolve()
-            })
+    const reader = (_file.stream() as ReadableStream<Uint8Array>).getReader();
+    let transferred = 0;
+
+    while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        // Slice stream chunk into 16KB WebRTC-safe pieces
+        let offset = 0;
+        while (offset < value.byteLength) {
+
+            // Wait if buffer is too full
+            if (dc.bufferedAmount > MAX_BUFFER) {
+                await new Promise<void>(resolve => {
+                    dc.bufferedAmountLowThreshold = 64 * 1024;
+                    dc.onbufferedamountlow = () => resolve();
+                });
+            }
+
+            const slice = value.buffer.slice(
+                value.byteOffset + offset,
+                value.byteOffset + offset + CHUNK_SIZE
+            ) as ArrayBuffer;
+
+            dc.send(slice);
+
+            const sentBytes = Math.min(CHUNK_SIZE, value.byteLength - offset);
+            transferred += sentBytes;
+            offset += CHUNK_SIZE;
+
+            setProgress({
+                filename: _file.name,
+                size: _file.size,
+                transferred,
+                percent: Math.round((transferred / _file.size) * 100),
+                speed: 0,
+                eta: 0,
+            });
         }
-        const chunk = buffer.slice(offset, offset + CHUNK_SIZE);
-        dc.send(chunk);
-        offset += CHUNK_SIZE;
-
-        setProgress({
-            filename: _file.name,
-            size: _file.size,
-            transferred: offset,
-            percent: Math.round((offset / buffer.byteLength) * 100),
-            speed: 0,   // we'll calculate this properly later
-            eta: 0      // we'll calculate this properly later
-        })
-
-        // console.log(`sent chunk — offset: ${offset} / ${buffer.byteLength}`)
     }
-    // console.log('dchannel --------', buffer);
-  }
+
+    console.log('file send complete:', _file.name);
+}
 
   return {
     status,
