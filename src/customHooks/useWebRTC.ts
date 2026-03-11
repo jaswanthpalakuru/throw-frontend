@@ -8,8 +8,6 @@ const RTC_CONFIG: RTCConfiguration = {
   ]
 }
 
-const CHUNK_SIZE = 16 * 1024
-
 export function useWebRTC() {
   const [status, setStatus] = useState<ConnectionStatus>('idle');
   const [roomId, setRoomId] = useState<string>('');
